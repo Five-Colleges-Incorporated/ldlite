@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import sqlite3
 import uuid
 from typing import TYPE_CHECKING, Literal, Union
 
@@ -106,13 +105,12 @@ def _old_drop_json_tables(db: dbapi.DBAPIConnection, table: str) -> None:
             cur2 = db.cursor()
             try:
                 cur2.execute("DROP TABLE " + sqlid(t))
-            except (psycopg2.Error, duckdb.CatalogException, sqlite3.OperationalError):
+            except (psycopg2.Error, duckdb.CatalogException):
                 continue
             finally:
                 cur2.close()
     except (
         psycopg2.Error,
-        sqlite3.OperationalError,
         duckdb.CatalogException,
     ):
         pass
@@ -124,7 +122,6 @@ def _old_drop_json_tables(db: dbapi.DBAPIConnection, table: str) -> None:
     except (
         psycopg2.Error,
         duckdb.CatalogException,
-        sqlite3.OperationalError,
     ):
         pass
     finally:
@@ -143,14 +140,13 @@ def drop_json_tables(db: dbapi.DBAPIConnection, table: str) -> None:
             cur2 = db.cursor()
             try:
                 cur2.execute("DROP TABLE " + sqlid(t))
-            except (psycopg2.Error, duckdb.CatalogException, sqlite3.OperationalError):
+            except (psycopg2.Error, duckdb.CatalogException):
                 continue
             finally:
                 cur2.close()
     except (
         psycopg2.Error,
         duckdb.CatalogException,
-        sqlite3.OperationalError,
     ):
         pass
     finally:
@@ -161,7 +157,6 @@ def drop_json_tables(db: dbapi.DBAPIConnection, table: str) -> None:
     except (
         psycopg2.Error,
         duckdb.CatalogException,
-        sqlite3.OperationalError,
     ):
         pass
     finally:
@@ -510,7 +505,7 @@ def transform_json(  # noqa: C901, PLR0912, PLR0913, PLR0915
     try:
         cur.execute(
             "SELECT "
-            + ",".join([cast_to_varchar(sqlid(a), dbtype) for a in str_attrs])
+            + ",".join([cast_to_varchar(sqlid(a)) for a in str_attrs])
             + " FROM "
             + sqlid(table),
         )
@@ -605,7 +600,7 @@ def transform_json(  # noqa: C901, PLR0912, PLR0913, PLR0915
     try:
         cur.execute(
             "SELECT "
-            + ",".join([cast_to_varchar(sqlid(a), dbtype) for a in json_attrs])
+            + ",".join([cast_to_varchar(sqlid(a)) for a in json_attrs])
             + " FROM "
             + sqlid(table),
         )
@@ -657,7 +652,6 @@ def transform_json(  # noqa: C901, PLR0912, PLR0913, PLR0915
     except (
         RuntimeError,
         psycopg2.Error,
-        sqlite3.OperationalError,
         duckdb.CatalogException,
     ) as e:
         raise RuntimeError("running JSON transform: " + str(e)) from e
@@ -685,7 +679,6 @@ def transform_json(  # noqa: C901, PLR0912, PLR0913, PLR0915
     except (
         RuntimeError,
         psycopg2.Error,
-        sqlite3.OperationalError,
         duckdb.CatalogException,
     ) as e:
         raise RuntimeError("writing table catalog for JSON transform: " + str(e)) from e

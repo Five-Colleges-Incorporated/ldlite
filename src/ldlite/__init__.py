@@ -292,9 +292,6 @@ class LDLite:
         if self.db is None:
             self._check_db()
             return []
-        if len(schema_table) == 2 and self.dbtype == DBType.SQLITE:
-            table = schema_table[0] + "_" + schema_table[1]
-            schema_table = [table]
         if not self._quiet:
             print("ldlite: querying: " + path, file=sys.stderr)
         drop_json_tables(self.db, table)

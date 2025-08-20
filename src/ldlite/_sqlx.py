@@ -5,8 +5,6 @@ from enum import Enum
 from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
-    import sqlite3
-
     import duckdb
     import psycopg2
     from _typeshed import dbapi
@@ -18,7 +16,6 @@ class DBType(Enum):
     UNDEFINED = 0
     DUCKDB = 1
     POSTGRES = 2
-    SQLITE = 4
 
 
 def as_duckdb(
@@ -41,36 +38,10 @@ def as_postgres(
     return cast("psycopg2.extensions.connection", db)
 
 
-def as_sqlite(
-    db: dbapi.DBAPIConnection,
-    dbtype: DBType,
-) -> sqlite3.Connection | None:
-    if dbtype != DBType.SQLITE:
-        return None
-
-    return cast("sqlite3.Connection", db)
-
-
-def strip_schema(table: str) -> str:
-    st = table.split(".")
-    if len(st) == 1:
-        return table
-    if len(st) == 2:
-        return st[1]
-    raise ValueError("invalid table name: " + table)
-
-
 def autocommit(db: dbapi.DBAPIConnection, dbtype: DBType, enable: bool) -> None:
     if (pgdb := as_postgres(db, dbtype)) is not None:
         pgdb.rollback()
         pgdb.set_session(autocommit=enable)
-
-    if (sql3db := as_sqlite(db, dbtype)) is not None:
-        sql3db.rollback()
-        if enable:
-            sql3db.isolation_level = None
-        else:
-            sql3db.isolation_level = "DEFERRED"
 
 
 def server_cursor(db: dbapi.DBAPIConnection, dbtype: DBType) -> dbapi.DBAPICursor:
@@ -89,14 +60,12 @@ def sqlid(ident: str) -> str:
     return ".".join(['"' + s + '"' for s in sp])
 
 
-def cast_to_varchar(ident: str, dbtype: DBType) -> str:
-    if dbtype == DBType.SQLITE:
-        return "CAST(" + ident + " as TEXT)"
+def cast_to_varchar(ident: str) -> str:
     return ident + "::varchar"
 
 
 def varchar_type(dbtype: DBType) -> str:
-    if dbtype == DBType.POSTGRES or DBType.SQLITE:
+    if dbtype == DBType.POSTGRES:
         return "text"
     return "varchar"
 
@@ -104,8 +73,6 @@ def varchar_type(dbtype: DBType) -> str:
 def json_type(dbtype: DBType) -> str:
     if dbtype == DBType.POSTGRES:
         return "jsonb"
-    if dbtype == DBType.SQLITE:
-        return "text"
     return "varchar"
 
 
@@ -114,7 +81,7 @@ def encode_sql_str(dbtype: DBType, s: str | bytes) -> str:  # noqa: C901, PLR091
         s = s.decode("utf-8")
 
     b = "E'" if dbtype == DBType.POSTGRES else "'"
-    if dbtype in (DBType.SQLITE, DBType.DUCKDB):
+    if dbtype == DBType.DUCKDB:
         for c in s:
             if c == "'":
                 b += "''"
