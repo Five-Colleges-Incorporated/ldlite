@@ -48,7 +48,6 @@ from ._csv import to_csv
 from ._jsonx import Attr, drop_json_tables, transform_json
 from ._select import select
 from ._sqlx import DBType, as_postgres, autocommit, encode_sql_str, json_type, sqlid
-from ._xlsx import to_xlsx
 from .folio import FolioClient, FolioParams
 
 if TYPE_CHECKING:
@@ -554,43 +553,6 @@ class LDLite:
     def to_csv(self) -> NoReturn:  # pragma: nocover
         """Deprecated; use export_csv()."""
         msg = "to_csv() is no longer supported: use export_csv()"
-        raise ValueError(msg)
-
-    def export_excel(
-        self,
-        filename: str,
-        table: str,
-        header: bool = True,
-    ) -> None:  # pragma: nocover
-        """Deprecated; this will be removed in the next major release of LDLite.
-
-        Export a table in the reporting database to an Excel file.
-
-        All rows of *table* are exported to *filename*, or *filename*.xlsx if
-        *filename* does not have an extension.
-
-        If *header* is True (the default), the worksheet will begin with a row
-        containing the column names.
-
-        Example:
-            ld.export_excel(table='g', filename='g')
-
-        """
-        if self.db is None:
-            self._check_db()
-            return
-
-        autocommit(self.db, self.dbtype, False)
-        try:
-            to_xlsx(self.db, self.dbtype, table, filename, header)
-            if (pgdb := as_postgres(self.db, self.dbtype)) is not None:
-                pgdb.rollback()
-        finally:
-            autocommit(self.db, self.dbtype, True)
-
-    def to_xlsx(self) -> NoReturn:  # pragma: nocover
-        """Deprecated; use export_excel()."""
-        msg = "to_xlsx() is no longer supported: use export_excel()"
         raise ValueError(msg)
 
     def verbose(self, enable: bool) -> None:
