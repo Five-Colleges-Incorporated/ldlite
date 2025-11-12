@@ -36,7 +36,7 @@ class FolioClient:
     def __init__(self, params: FolioParams):
         self._client_factory = default_client_factory(params)
 
-    def iterate_records(
+    def iterate_records(  # noqa: C901 (to be really fixed in a non-bugfix release)
         self,
         path: str,
         timeout: float,
@@ -92,7 +92,21 @@ class FolioClient:
                         record = ""
                     return
 
-            key = next(iter(j.keys()))
+            # folio records usually have additional keys besides the actual list
+            # the items are usually first but not always
+            # so we check for keys until we find a good one
+            # totalRecords and erm as of right now are the only keys like this
+            # but there may end up with more
+            keys = iter(j.keys())
+            while (key := next(keys)) and key in [
+                "totalRecords",
+                "pageSize",
+                "page",
+                "totalPages",
+                "meta",
+                "total",
+            ]:
+                continue
             nonid_key = (
                 # Grab the first key if there isn't an id column
                 # because we need it to offset page properly
