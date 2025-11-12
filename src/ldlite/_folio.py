@@ -118,7 +118,7 @@ class FolioClient:
             while True:
                 if nonid_key is not None:
                     p = params.offset_paging(key=nonid_key, page=next(page))
-                elif params.can_page_by_id():
+                elif params.can_page_by_id(path=path):
                     p = params.id_paging(last_id=last_id)
                 else:
                     p = params.offset_paging(page=next(page))
