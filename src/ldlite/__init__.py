@@ -34,7 +34,7 @@ Example:
 
 """
 
-import sys
+import logging
 from typing import TYPE_CHECKING, NoReturn, cast
 
 import duckdb
@@ -51,6 +51,10 @@ if TYPE_CHECKING:
 
     from _typeshed import dbapi
     from httpx_folio.query import QueryType
+
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())
+logger = logging.getLogger(__name__)
 
 
 class LDLite:
@@ -299,8 +303,7 @@ class LDLite:
             path,
             query if query and isinstance(query, str) else None,
         )
-        if not self._quiet:
-            print("ldlite: querying: " + path, file=sys.stderr)
+        logger.info("querying: %s", path)
 
         (total_records, records) = self._folio.iterate_records(
             path,
@@ -312,11 +315,7 @@ class LDLite:
         if limit is not None:
             total_records = min(total_records, limit)
             records = (x for _, x in zip(range(limit), records, strict=False))
-        if self._verbose:
-            print(
-                "ldlite: estimated row count: " + str(total_records),
-                file=sys.stderr,
-            )
+        logger.debug("estimated row count: %s", total_records)
 
         self._database.ingest_records(
             table,
@@ -369,9 +368,7 @@ class LDLite:
         ) as progress:
             self._database.index_prefix(table, progress)
 
-        # Return table names
-        if not self._quiet:
-            print("ldlite: created tables: " + ", ".join(newtables), file=sys.stderr)
+        logger.info("created tables: %s", newtables)
         return newtables
 
     def quiet(self, enable: bool) -> None:
@@ -435,7 +432,6 @@ class LDLite:
         ) + (
             sql.SQL("LIMIT ") + sql.Literal(limit) if limit is not None else sql.SQL("")
         )
-        print(export.as_string())
         duck.sql(export.as_string()).show()
 
     def export_csv(self, filename: str, table: str, header: bool = True) -> None:
@@ -468,7 +464,6 @@ class LDLite:
             duck = cast("duckdb.DuckDBPyConnection", self.db.cursor())
             table_id = sql.Identifier(*table.split("."))
 
-        print(type(filename))
         export = (
             sql.SQL("COPY (SELECT * FROM {table}) TO {file} WITH ").format(
                 table=table_id,
@@ -478,7 +473,6 @@ class LDLite:
             if header
             else sql.SQL("(DELIMETER ',')")
         )
-        print(export.as_string())
         duck.execute(export.as_string())
 
     def to_csv(self) -> NoReturn:  # pragma: nocover
