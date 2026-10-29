@@ -11,7 +11,7 @@ from httpx_folio.factories import (
 )
 from httpx_folio.query import QueryParams, QueryType
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("ldlite.download")
 
 _SOURCESTATS = {
     "/source-storage/records": "/source-storage/records",
